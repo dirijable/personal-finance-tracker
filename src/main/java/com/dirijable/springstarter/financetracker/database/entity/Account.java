@@ -3,7 +3,6 @@ package com.dirijable.springstarter.financetracker.database.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.math.BigDecimal;
 
 @Entity
 @Table(name = "account")

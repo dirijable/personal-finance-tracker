@@ -22,9 +22,7 @@ public class Transaction {
 
     private LocalDateTime createdAt;
     @ManyToOne
-    @JoinColumn(name = "from_account_id")
-    private Account fromAccount;
-    @ManyToOne
-    @JoinColumn(name = "to_account_id")
-    private Account toAccount;
+    @JoinColumn(name = "account_id")
+    private Account account;
+
 }
