@@ -19,7 +19,7 @@ public class CategoryService {
     private final UserRepository userRepository;
 
 
-    public Category addCategory(String categoryName, Long userId) {
+    public Category add(String categoryName, Long userId) {
 
         if (categoryRepository.existsCategoriesByNameAndUserId(categoryName, userId)) {
             log.warn("Unable to add category with name '{}'. This category already exists", categoryName);
@@ -34,8 +34,16 @@ public class CategoryService {
         });
         maybeUser.addCategory(category);
         log.info("Category with name '{}' added to user with id='{}'", category.getName(), maybeUser.getId());
-//        log.info("Category with name '{}' added to db", category.getName());
         return categoryRepository.save(category);
+    }
 
+    public void deleteCategory(Long categoryId){
+        if(!categoryRepository.existsById(categoryId))
+            throw new IllegalArgumentException("category with id='%d' does not exist".formatted(categoryId));
+        categoryRepository.deleteById(categoryId);
+    }
+
+    public Category updateById(String categoryName, Long categoryId){
+        return null;
     }
 }

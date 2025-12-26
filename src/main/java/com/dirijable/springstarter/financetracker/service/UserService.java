@@ -1,8 +1,9 @@
 package com.dirijable.springstarter.financetracker.service;
 
 import com.dirijable.springstarter.financetracker.database.entity.User;
-import com.dirijable.springstarter.financetracker.dto.CreateUserDto;
-import com.dirijable.springstarter.financetracker.dto.UserUpdateDto;
+import com.dirijable.springstarter.financetracker.dto.user.UserCreateDto;
+import com.dirijable.springstarter.financetracker.dto.user.UserResponseDto;
+import com.dirijable.springstarter.financetracker.dto.user.UserUpdateDto;
 import com.dirijable.springstarter.financetracker.mapper.Mapper;
 import com.dirijable.springstarter.financetracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final Mapper<CreateUserDto, User> createUserDtoUserMapper;
+    private final Mapper<UserCreateDto, User> createUserDtoUserMapper;
 
     public User findById(Long userId) {
-        var maybeUser = userRepository.findById(userId);
-        return maybeUser.orElse(null);
+        return userRepository.findById(userId)
+                .orElseThrow(()->new RuntimeException("user with id='%d' not found".formatted(userId)));
     }
 
     public void updateById(Long userId, UserUpdateDto dto) {
@@ -55,12 +56,13 @@ public class UserService {
     }
 
 
-    public void register(CreateUserDto userDto){
+    public UserResponseDto create(UserCreateDto userDto){
 
         if(userRepository.existsUserByEmail(userDto.email()))
             throw new IllegalArgumentException("user with email '%s' already exist".formatted(userDto.email()));
         User user = createUserDtoUserMapper.map(userDto);
         userRepository.save(user);
+        return null;
     }
 
 }

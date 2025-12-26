@@ -1,4 +1,4 @@
-package com.dirijable.springstarter.financetracker.dto;
+package com.dirijable.springstarter.financetracker.dto.user;
 
 import jakarta.validation.constraints.Email;
 
