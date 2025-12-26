@@ -9,7 +9,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "users")
-@ToString(exclude = "categories")
+@ToString(exclude = {"categories", "accounts", "password"})
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
@@ -22,7 +22,8 @@ public class User {
 
     @Column(unique = true)
     private String email;
-    @Column(unique = true)
+
+    private String password;
     private String username;
 
     @Builder.Default
@@ -32,4 +33,14 @@ public class User {
     @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Account> accounts = new ArrayList<>();
+
+    public void addCategory(Category category){
+        this.categories.add(category);
+        category.setUser(this);
+    }
+
+    void addAccount(Account account){
+        this.accounts.add(account);
+        account.setUser(this);
+    }
 }
