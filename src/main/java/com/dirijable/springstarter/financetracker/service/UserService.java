@@ -4,7 +4,7 @@ import com.dirijable.springstarter.financetracker.database.entity.User;
 import com.dirijable.springstarter.financetracker.dto.user.UserCreateDto;
 import com.dirijable.springstarter.financetracker.dto.user.UserResponseDto;
 import com.dirijable.springstarter.financetracker.dto.user.UserUpdateDto;
-import com.dirijable.springstarter.financetracker.mapper.Mapper;
+import com.dirijable.springstarter.financetracker.mapper.UserMapper;
 import com.dirijable.springstarter.financetracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,34 +19,30 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final Mapper<UserCreateDto, User> createUserDtoUserMapper;
+    private final UserMapper userMapper;
 
-    public User findById(Long userId) {
-        return userRepository.findById(userId)
+    public UserResponseDto findById(Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(()->new RuntimeException("user with id='%d' not found".formatted(userId)));
+        return userMapper.toResponse(user);
     }
 
-    public void updateById(Long userId, UserUpdateDto dto) {
+    public UserResponseDto updateById(Long userId, UserUpdateDto dto) {
         if (dto.email() == null && dto.username() == null && dto.password() ==null)
             throw new IllegalArgumentException("email, username and password == null");
 
         User user = userRepository.findById(userId).orElseThrow(RuntimeException::new);
         String oldEmail = user.getEmail();
         String oldUsername = user.getUsername();
-        if (dto.email() != null) {
             if (userRepository.existsUserByEmail(dto.email()))
                 throw new IllegalArgumentException("email already exist");
-            user.setEmail(dto.email());
-        }
-        if (dto.username() != null)
-            user.setUsername(dto.username());
-        if (dto.password() != null)
-            user.setPassword(dto.password());
+        userMapper.updateEntity(dto, user);
         log.info(
                 "User id={} updated. Old email={}, new email={}. Old username={}, new username={}",
                 user.getId(), oldEmail, user.getEmail(),
                 oldUsername, user.getUsername()
         );
+        return userMapper.toResponse(user);
     }
 
 
@@ -57,12 +53,15 @@ public class UserService {
 
 
     public UserResponseDto create(UserCreateDto userDto){
-
         if(userRepository.existsUserByEmail(userDto.email()))
             throw new IllegalArgumentException("user with email '%s' already exist".formatted(userDto.email()));
-        User user = createUserDtoUserMapper.map(userDto);
-        userRepository.save(user);
-        return null;
+        User user = userRepository.save(userMapper.toEntity(userDto));
+        return userMapper.toResponse(user);
     }
 
+    public void deleteById(Long userId){
+        if(!userRepository.existsById(userId))
+            throw new IllegalArgumentException("User with id='%d' not found".formatted(userId));
+        userRepository.deleteById(userId);
+    }
 }

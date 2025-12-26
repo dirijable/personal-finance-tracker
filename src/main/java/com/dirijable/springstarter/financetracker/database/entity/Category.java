@@ -17,7 +17,7 @@ public class Category {
     private Long id;
 
     private String name;
-
+    private String description;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
