@@ -1,7 +1,6 @@
 package com.dirijable.springstarter.financetracker.service;
 
 import com.dirijable.springstarter.financetracker.database.entity.Category;
-import com.dirijable.springstarter.financetracker.database.entity.User;
 import com.dirijable.springstarter.financetracker.dto.category.CategoryCreateDto;
 import com.dirijable.springstarter.financetracker.dto.category.CategoryResponseDto;
 import com.dirijable.springstarter.financetracker.dto.category.CategoryUpdateDto;
@@ -57,7 +56,4 @@ public class CategoryService {
         categoryMapper.updateEntity(updateDto, category);
         return categoryMapper.toResponse(category);
     }
-
-
-
 }
