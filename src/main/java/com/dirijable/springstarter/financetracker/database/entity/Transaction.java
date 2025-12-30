@@ -1,10 +1,8 @@
 package com.dirijable.springstarter.financetracker.database.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,23 +13,28 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Data
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Transaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private BigDecimal amount;
-    private String description;
-    private LocalDateTime createdAt;
+    Long id;
+
+    BigDecimal amount;
+
+    String description;
+
+    LocalDateTime createdAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id")
-    private Account account;
+    Account account;
 
     @Enumerated(EnumType.STRING)
-    private TransactionType transactionType;
+    TransactionType transactionType;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
-    private Category category;
+    Category category;
 
 }

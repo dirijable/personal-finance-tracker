@@ -2,6 +2,7 @@ package com.dirijable.springstarter.financetracker.database.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,25 +15,26 @@ import java.util.List;
 @NoArgsConstructor
 @Data
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    Long id;
 
     @Column(unique = true)
-    private String email;
+    String email;
 
-    private String password;
-    private String username;
-
-    @Builder.Default
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Category> categories = new ArrayList<>();
+    String password;
+    String username;
 
     @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Account> accounts = new ArrayList<>();
+    List<Category> categories = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    List<Account> accounts = new ArrayList<>();
 
     public void addCategory(Category category){
         this.categories.add(category);
