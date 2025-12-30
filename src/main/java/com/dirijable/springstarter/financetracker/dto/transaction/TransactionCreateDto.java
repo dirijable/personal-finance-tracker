@@ -6,7 +6,7 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 
 public record TransactionCreateDto (
-        @NotNull @Positive BigDecimal amount,
+        @NotNull @Min(value = 0) BigDecimal amount,
         @Size(max = 500) String description,
         @NotNull TransactionType transactionType,
         @NotNull Long accountId,
