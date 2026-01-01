@@ -39,6 +39,7 @@ public class AccountService {
         User user = userRepository.findById(userId)
                         .orElseThrow(() -> new IllegalArgumentException("user with id='%d' not found".formatted(userId)));
         user.addAccount(account);
+        accountRepository.save(account);
         return accountMapper.toResponse(account);
     }
 
@@ -57,7 +58,7 @@ public class AccountService {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("account with id='%d' not found".formatted(accountId)));
         if(!account.getUser().getId().equals(userId)){
-            throw new IllegalArgumentException("User with id='%d' does not have account with id='%d'".formatted(userId, accountId));
+            throw new IllegalArgumentException("User with id='%d' have not account with id='%d'".formatted(userId, accountId));
         }
         accountRepository.deleteById(accountId);
     }
