@@ -7,7 +7,6 @@ import java.math.BigDecimal;
 
 public record AccountUpdateDto(
         String name,
-        @Min(value = 0) BigDecimal balance,
-        Currency currency
+        String description
 ) {
 }

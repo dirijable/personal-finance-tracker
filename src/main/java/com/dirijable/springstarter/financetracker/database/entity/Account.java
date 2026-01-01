@@ -22,7 +22,9 @@ public class Account {
 
     String name;
 
-    BigDecimal balance;
+    String description;
+
+    BigDecimal balance = BigDecimal.ZERO;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

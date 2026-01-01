@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 public record AccountResponseDto(
         Long id,
         String name,
+        String description,
         BigDecimal balance,
         Currency currency
 ) {
