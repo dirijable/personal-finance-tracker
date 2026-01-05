@@ -5,6 +5,8 @@ import com.dirijable.springstarter.financetracker.database.entity.User;
 import com.dirijable.springstarter.financetracker.dto.account.AccountCreateDto;
 import com.dirijable.springstarter.financetracker.dto.account.AccountResponseDto;
 import com.dirijable.springstarter.financetracker.dto.account.AccountUpdateDto;
+import com.dirijable.springstarter.financetracker.exception.business.notfound.AccountNotFoundException;
+import com.dirijable.springstarter.financetracker.exception.business.notfound.UserNotFoundException;
 import com.dirijable.springstarter.financetracker.mapper.AccountMapper;
 import com.dirijable.springstarter.financetracker.repository.AccountRepository;
 import com.dirijable.springstarter.financetracker.repository.UserRepository;
@@ -27,9 +29,9 @@ public class AccountService {
 
     public AccountResponseDto findById(Long accountId, Long userId){
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new IllegalArgumentException("account with id='%d' not found".formatted(accountId)));
+                .orElseThrow(() -> new UserNotFoundException("account with id='%d' not found".formatted(accountId)));
         if(!account.getUser().getId().equals(userId)){
-            throw new IllegalArgumentException("User with id='%d' have not account with id='%d'".formatted(userId, accountId));
+            throw new AccountNotFoundException("User with id='%d' have not account with id='%d'".formatted(userId, accountId));
         }
         return accountMapper.toResponse(account);
     }
@@ -37,7 +39,7 @@ public class AccountService {
     public AccountResponseDto create(AccountCreateDto createDto, Long userId){
         Account account = accountMapper.toEntity(createDto);
         User user = userRepository.findById(userId)
-                        .orElseThrow(() -> new IllegalArgumentException("user with id='%d' not found".formatted(userId)));
+                        .orElseThrow(() -> new UserNotFoundException("user with id='%d' not found".formatted(userId)));
         user.addAccount(account);
         accountRepository.save(account);
         return accountMapper.toResponse(account);
@@ -46,9 +48,9 @@ public class AccountService {
     public AccountResponseDto updateById(AccountUpdateDto updateDto, Long accountId, Long userId){
 
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new IllegalArgumentException("account with id='%d' not found".formatted(accountId)));
+                .orElseThrow(() -> new UserNotFoundException("account with id='%d' not found".formatted(accountId)));
         if(!account.getUser().getId().equals(userId)){
-            throw new IllegalArgumentException("User with id='%d' have not account with id='%d'".formatted(userId, accountId));
+            throw new AccountNotFoundException("User with id='%d' have not account with id='%d'".formatted(userId, accountId));
         }
         accountMapper.updateEntity(updateDto, account);
         return accountMapper.toResponse(account);
@@ -56,9 +58,9 @@ public class AccountService {
 
     public void deleteById(Long accountId, Long userId){
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new IllegalArgumentException("account with id='%d' not found".formatted(accountId)));
+                .orElseThrow(() -> new UserNotFoundException("account with id='%d' not found".formatted(accountId)));
         if(!account.getUser().getId().equals(userId)){
-            throw new IllegalArgumentException("User with id='%d' have not account with id='%d'".formatted(userId, accountId));
+            throw new AccountNotFoundException("User with id='%d' have not account with id='%d'".formatted(userId, accountId));
         }
         accountRepository.deleteById(accountId);
     }
