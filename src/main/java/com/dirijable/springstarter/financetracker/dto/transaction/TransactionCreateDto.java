@@ -9,6 +9,5 @@ public record TransactionCreateDto (
         @NotNull @Min(value = 0) BigDecimal amount,
         @Size(max = 500) String description,
         @NotNull TransactionType transactionType,
-        @NotNull Long accountId,
         @NotNull Long categoryId
         ) {}

@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Transaction {
+public class Transaction{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

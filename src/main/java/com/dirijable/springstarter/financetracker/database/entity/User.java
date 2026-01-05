@@ -7,6 +7,8 @@ import lombok.experimental.FieldDefaults;
 import java.util.ArrayList;
 import java.util.List;
 
+    // TODO: удалить List<Account> из User для перехода на одностороннюю связь через AccountRepository.findAllByUserId().
+    // TODO: удалить List<Category> из User для перехода на одностороннюю связь через CategoryRepository.findAllByUserId().
 
 @Entity
 @Table(name = "users")
@@ -41,7 +43,7 @@ public class User {
         category.setUser(this);
     }
 
-    void addAccount(Account account){
+    public void addAccount(Account account){
         this.accounts.add(account);
         account.setUser(this);
     }

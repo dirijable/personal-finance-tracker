@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Account {
+public class Account{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
@@ -24,6 +24,7 @@ public class Account {
 
     String description;
 
+    @Builder.Default
     BigDecimal balance = BigDecimal.ZERO;
 
     @ManyToOne(fetch = FetchType.LAZY)
