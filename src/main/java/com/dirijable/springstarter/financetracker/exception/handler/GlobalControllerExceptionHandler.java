@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,7 +34,7 @@ public class GlobalControllerExceptionHandler extends ResponseEntityExceptionHan
         ErrorResponse errorResponse = new ErrorResponse(
                 status.value(),
                 "Validation failed",
-                LocalDateTime.now(),
+                Instant.now(),
                 errors
         );
         return ResponseEntity.badRequest().body(errorResponse);
@@ -46,7 +46,7 @@ public class GlobalControllerExceptionHandler extends ResponseEntityExceptionHan
         ErrorResponse error = new ErrorResponse(
                 ex.getStatus().value(),
                 ex.getMessage(),
-                LocalDateTime.now(),
+                Instant.now(),
                 null
         );
         return ResponseEntity
