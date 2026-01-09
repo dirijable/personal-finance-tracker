@@ -8,7 +8,7 @@ import java.time.Instant;
 
 public record TransactionCreateDto(
         @NotNull Long accountId,
-        @NotNull @Min(value = 0) BigDecimal amount,
+        @NotNull @Positive BigDecimal amount,
         @Size(max = 500) String description,
         @PastOrPresent Instant transactionDate,
         @NotNull TransactionType transactionType,

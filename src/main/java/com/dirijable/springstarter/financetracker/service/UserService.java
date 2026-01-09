@@ -20,7 +20,7 @@ import java.util.List;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class UserService {
 
     private final UserRepository userRepository;
@@ -39,6 +39,7 @@ public class UserService {
         return userMapper.toResponse(user);
     }
 
+    @Transactional
     public UserResponseDto updateById(Long userId, UserUpdateDto dto) {
         if (dto.email() == null && dto.username() == null && dto.password() ==null)
             throw new IllegalArgumentException("email, username and password == null");
@@ -63,7 +64,7 @@ public class UserService {
         return user.getPassword().equals(password);
     }
 
-
+    @Transactional
     public UserResponseDto create(UserCreateDto userDto){
         if(userRepository.existsUserByEmail(userDto.email()))
             throw new EmailAlreadyExistException("user with email='%s' already exist".formatted(userDto.email()));
@@ -71,6 +72,7 @@ public class UserService {
         return userMapper.toResponse(user);
     }
 
+    @Transactional
     public void deleteById(Long userId){
         if(!userRepository.existsById(userId))
             throw new UserNotFoundException("User with id='%d' not found".formatted(userId));

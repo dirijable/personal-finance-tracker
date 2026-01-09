@@ -5,6 +5,7 @@ import com.dirijable.springstarter.financetracker.database.entity.User;
 import com.dirijable.springstarter.financetracker.dto.account.AccountCreateDto;
 import com.dirijable.springstarter.financetracker.dto.account.AccountResponseDto;
 import com.dirijable.springstarter.financetracker.dto.account.AccountUpdateDto;
+import com.dirijable.springstarter.financetracker.exception.business.conflict.AccountAlreadyExists;
 import com.dirijable.springstarter.financetracker.exception.business.denied.AccessDeniedException;
 import com.dirijable.springstarter.financetracker.exception.business.notfound.AccountNotFoundException;
 import com.dirijable.springstarter.financetracker.exception.business.notfound.UserNotFoundException;
@@ -14,8 +15,8 @@ import com.dirijable.springstarter.financetracker.repository.UserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -25,6 +26,7 @@ import java.util.List;
         level = AccessLevel.PRIVATE
 )
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AccountService {
 
     AccountRepository accountRepository;
@@ -50,15 +52,19 @@ public class AccountService {
         return accountMapper.toResponse(account);
     }
 
+    @Transactional
     public AccountResponseDto create(AccountCreateDto createDto, Long userId){
         Account account = accountMapper.toEntity(createDto);
         User user = userRepository.findById(userId)
                         .orElseThrow(() -> new UserNotFoundException("user with id='%d' not found".formatted(userId)));
+        if(accountRepository.existsByNameAndUserId(createDto.name(), user.getId()))
+            throw new AccountAlreadyExists("user with id='%d' already has account with name='%s'".formatted(user.getId(), createDto.name()));
         user.addAccount(account);
         accountRepository.save(account);
         return accountMapper.toResponse(account);
     }
 
+    @Transactional
     public AccountResponseDto updateById(AccountUpdateDto updateDto, Long accountId, Long userId){
 
         Account account = accountRepository.findById(accountId)
@@ -70,6 +76,7 @@ public class AccountService {
         return accountMapper.toResponse(account);
     }
 
+    @Transactional
     public void deleteById(Long accountId, Long userId){
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new UserNotFoundException("account with id='%d' not found".formatted(accountId)));

@@ -89,7 +89,8 @@ public class TransactionService {
         account.updateBalance(dto.amount(), dto.transactionType());
 
         Transaction entity = transactionMapper.toEntity(dto);
-        entity.setTransactionDate(Instant.now());
+        if (dto.transactionDate() == null)
+            entity.setTransactionDate(Instant.now());
         entity.setAccount(account);
         entity.setCategory(category);
         Transaction savedTransaction = transactionRepository.save(entity);

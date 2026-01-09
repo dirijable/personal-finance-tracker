@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 /*
@@ -13,7 +14,7 @@ TODO в будщем добавить вместо accountId и categoryId ка�
  */
 public record TransactionResponseDto(
         Long id,
-        LocalDateTime createdAt,
+        Instant transactionDate,
         BigDecimal amount,
         String description,
         TransactionType transactionType,
