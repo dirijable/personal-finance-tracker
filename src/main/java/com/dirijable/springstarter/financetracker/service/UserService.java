@@ -10,7 +10,7 @@ import com.dirijable.springstarter.financetracker.mapper.UserMapper;
 import com.dirijable.springstarter.financetracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.Nullable;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +25,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
     public List<UserResponseDto> findAll() {
         return userRepository.findAll()
@@ -41,19 +42,19 @@ public class UserService {
 
     @Transactional
     public UserResponseDto updateById(Long userId, UserUpdateDto dto) {
-        if (dto.email() == null && dto.username() == null && dto.password() ==null)
-            throw new IllegalArgumentException("email, username and password == null");
+        if (dto.email() == null && dto.name() == null && dto.password() ==null)
+            throw new IllegalArgumentException("email, name and password == null");
 
         User user = userRepository.findById(userId).orElseThrow(()->new UserNotFoundException("user with id='%d' not found".formatted(userId)));
         String oldEmail = user.getEmail();
-        String oldUsername = user.getUsername();
+        String oldUsername = user.getName();
             if (userRepository.existsUserByEmail(dto.email()))
                 throw new EmailAlreadyExistException("email already exist");
         userMapper.updateEntity(dto, user);
         log.info(
-                "User id={} updated. Old email={}, new email={}. Old username={}, new username={}",
+                "User id={} updated. Old email={}, new email={}. Old name={}, new name={}",
                 user.getId(), oldEmail, user.getEmail(),
-                oldUsername, user.getUsername()
+                oldUsername, user.getName()
         );
         return userMapper.toResponse(user);
     }
@@ -68,7 +69,10 @@ public class UserService {
     public UserResponseDto create(UserCreateDto userDto){
         if(userRepository.existsUserByEmail(userDto.email()))
             throw new EmailAlreadyExistException("user with email='%s' already exist".formatted(userDto.email()));
-        User user = userRepository.save(userMapper.toEntity(userDto));
+        String encodedPassword = bCryptPasswordEncoder.encode(userDto.password());
+        User toSave = userMapper.toEntity(userDto);
+        toSave.setPassword(encodedPassword);
+        User user = userRepository.save(toSave);
         return userMapper.toResponse(user);
     }
 

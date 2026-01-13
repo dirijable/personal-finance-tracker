@@ -1,11 +1,14 @@
 package com.dirijable.springstarter.financetracker.database.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 // TODO: удалить List<Account> из User для перехода на одностороннюю связь через AccountRepository.findAllByUserId().
@@ -20,7 +23,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = false)
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class User extends AuditingEntity {
+public class User extends AuditingEntity implements UserDetails{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,7 +39,7 @@ public class User extends AuditingEntity {
 
     @Column(nullable = false,
             length = 32)
-    String username;
+    String name;
 
     @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
@@ -54,5 +57,21 @@ public class User extends AuditingEntity {
     public void addAccount(Account account) {
         this.accounts.add(account);
         account.setUser(this);
+    }
+
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+    }
+
+    @Override
+    public String getPassword(){
+        return this.password;
+    }
+
+    @Override
+    public String getUsername() {
+        return this.email;
     }
 }

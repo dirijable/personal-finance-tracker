@@ -30,7 +30,7 @@ class CategoryServiceTest {
         String categoryName = "Category 1";
         User user = User.builder()
                 .id(1L)
-                .username("username 1")
+                .username("name 1")
                 .email("email@gmail.com")
                 .build();
         Category savedCategory = Category.builder()

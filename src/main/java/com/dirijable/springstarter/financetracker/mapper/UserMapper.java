@@ -29,15 +29,15 @@ public interface UserMapper {
 //    return User.builder()
 //            .email(createDto.email())
 //            .password(createDto.password())
-//            .username(createDto.username())
+//            .name(createDto.name())
 //            .build();
 //}
 //
 //public void updateEntity(UserUpdateDto updateDto, User user) {
 //    if (updateDto.email() != null)
 //        user.setEmail(updateDto.email());
-//    if (updateDto.username() != null)
-//        user.setUsername(updateDto.username());
+//    if (updateDto.name() != null)
+//        user.setUsername(updateDto.name());
 //    if (updateDto.password() != null)
 //        user.setPassword(updateDto.password());
 //}
