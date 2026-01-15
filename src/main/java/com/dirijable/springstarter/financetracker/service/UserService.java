@@ -1,7 +1,6 @@
 package com.dirijable.springstarter.financetracker.service;
 
 import com.dirijable.springstarter.financetracker.database.entity.User;
-import com.dirijable.springstarter.financetracker.dto.user.UserCreateDto;
 import com.dirijable.springstarter.financetracker.dto.user.UserResponseDto;
 import com.dirijable.springstarter.financetracker.dto.user.UserUpdateDto;
 import com.dirijable.springstarter.financetracker.exception.business.conflict.EmailAlreadyExistException;
@@ -10,11 +9,13 @@ import com.dirijable.springstarter.financetracker.mapper.UserMapper;
 import com.dirijable.springstarter.financetracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 
 @Service
@@ -36,52 +37,30 @@ public class UserService {
 
     public UserResponseDto findById(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(()->new UserNotFoundException("user with id='%d' not found".formatted(userId)));
+                .orElseThrow(() -> new UserNotFoundException("user with id='%d' not found".formatted(userId)));
         return userMapper.toResponse(user);
     }
 
     @Transactional
+    @PreAuthorize("#userId == authentication.principal.id")
     public UserResponseDto updateById(Long userId, UserUpdateDto dto) {
-        if (dto.email() == null && dto.name() == null && dto.password() ==null)
+        if (dto.email() == null && dto.name() == null && dto.password() == null)
             throw new IllegalArgumentException("email, name and password == null");
-
-        User user = userRepository.findById(userId).orElseThrow(()->new UserNotFoundException("user with id='%d' not found".formatted(userId)));
-        String oldEmail = user.getEmail();
-        String oldUsername = user.getName();
-            if (userRepository.existsUserByEmail(dto.email()))
-                throw new EmailAlreadyExistException("email already exist");
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("user with id='%d' not found".formatted(userId)));
+        if (!Objects.equals(user.getEmail(), dto.email()) && userRepository.existsUserByEmail(dto.email()))
+            throw new EmailAlreadyExistException("email already exist");
         userMapper.updateEntity(dto, user);
-        log.info(
-                "User id={} updated. Old email={}, new email={}. Old name={}, new name={}",
-                user.getId(), oldEmail, user.getEmail(),
-                oldUsername, user.getName()
-        );
-        return userMapper.toResponse(user);
-    }
-
-
-    public boolean login(String email, String password){
-        User user = userRepository.findUserByEmail(email).orElseThrow(() -> new UserNotFoundException("user with email='%s' not found".formatted(email)));
-        return user.getPassword().equals(password);
-    }
-
-    @Transactional
-    public UserResponseDto create(UserCreateDto userDto){
-        if(userRepository.existsUserByEmail(userDto.email()))
-            throw new EmailAlreadyExistException("user with email='%s' already exist".formatted(userDto.email()));
-        String encodedPassword = bCryptPasswordEncoder.encode(userDto.password());
-        User toSave = userMapper.toEntity(userDto);
-        toSave.setPassword(encodedPassword);
-        User user = userRepository.save(toSave);
+        if (dto.password() != null) {
+            user.setPassword(bCryptPasswordEncoder.encode(dto.password()));
+        }
+        log.info("User with id {} updated by owner", userId);
         return userMapper.toResponse(user);
     }
 
     @Transactional
-    public void deleteById(Long userId){
-        if(!userRepository.existsById(userId))
+    public void deleteById(Long userId) {
+        if (!userRepository.existsById(userId))
             throw new UserNotFoundException("User with id='%d' not found".formatted(userId));
         userRepository.deleteById(userId);
     }
-
-
 }

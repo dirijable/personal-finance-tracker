@@ -16,9 +16,11 @@ import com.dirijable.springstarter.financetracker.repository.AccountRepository;
 import com.dirijable.springstarter.financetracker.repository.CategoryRepository;
 import com.dirijable.springstarter.financetracker.repository.TransactionRepository;
 import com.dirijable.springstarter.financetracker.repository.UserRepository;
+import com.dirijable.springstarter.financetracker.security.service.SecurityService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,55 +41,46 @@ public class TransactionService {
     TransactionRepository transactionRepository;
     CategoryRepository categoryRepository;
     AccountRepository accountRepository;
-    UserRepository userRepository;
     TransactionMapper transactionMapper;
 
+    @PreAuthorize("#userId == authentication.principal.id")
     public List<TransactionResponseDto> findAllByUserId(Long userId) {
-        if (!userRepository.existsById(userId))
-            throw new UserNotFoundException("user with id='%d' not found".formatted(userId));
         return transactionRepository.findAllByAccountUserId(userId)
                 .stream()
                 .map(transactionMapper::toResponse)
                 .toList();
     }
 
-    public TransactionResponseDto findById(Long transactionId, Long userId) {
-        Transaction transaction = transactionRepository.findById(transactionId)
-                .orElseThrow(() -> new TransactionNotFoundException("transaction with id='%d' not found".formatted(transactionId)));
-        if (!transaction.getAccount().getUser().getId().equals(userId))
-            throw new AccessDeniedException("user with id='%d' haven`t transaction with id='%d' on account with id='%d'");
-        return transactionMapper.toResponse(transaction);
+    @PreAuthorize("@securityService.canAccessTransaction(#transactionId)")
+    public TransactionResponseDto findById(Long transactionId) {
+        return transactionRepository.findById(transactionId)
+                .map(transactionMapper::toResponse)
+                .orElseThrow(() -> new TransactionNotFoundException(transactionId.toString()));
     }
 
+    @PreAuthorize("@securityService.canAccessTransaction(#transactionId)")
     @Transactional
-    public void deleteById(Long transactionId, Long userId) {
-
+    public void deleteById(Long transactionId) {
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new TransactionNotFoundException("transaction with id='%d' not found".formatted(transactionId)));
         Account account = transaction.getAccount();
-        if (!account.getUser().getId().equals(userId))
-            throw new AccessDeniedException("User with id='%d' don`t have account with id='%d'".formatted(userId, transaction.getAccount().getId()));
         account.reverseTransaction(transaction.getAmount(), transaction.getTransactionType());
         transactionRepository.delete(transaction);
     }
 
-
+    @PreAuthorize("""
+            @securityService.canAccessAccount(#dto.accountId()) &&
+            @securityService.canAccessCategory(#dto.categoryId())
+            """)
     @Transactional
-    public TransactionResponseDto create(TransactionCreateDto dto, Long userId) {
+    public TransactionResponseDto create(TransactionCreateDto dto) {
         Category category = categoryRepository.findById(dto.categoryId())
-                .orElseThrow(() -> new CategoryNotFoundException("category with id='%d' not found".formatted(dto.categoryId())));
+                .orElseThrow(() -> new CategoryNotFoundException(dto.categoryId().toString()));
         Account account = accountRepository.findById(dto.accountId())
-                .orElseThrow(() -> new AccountNotFoundException("account with id='%d' not found".formatted(dto.accountId())));
-
-        if (!account.getUser().getId().equals(userId))
-            throw new AccessDeniedException("User with id='%d' don`t have account with id='%d'".formatted(userId, dto.accountId()));
-        if (!account.getUser().getCategories().contains(category))
-            throw new AccessDeniedException("User with id='%d' don`t have category with id='%d'".formatted(userId, dto.categoryId()));
+                .orElseThrow(() -> new AccountNotFoundException(dto.accountId().toString()));
         if (dto.transactionType().equals(TransactionType.EXPENSE) && account.getBalance().compareTo(dto.amount()) < 0)
             throw new NotEnoughMoneyException("account with id='%d' haven`t enough money".formatted(dto.accountId()));
-
         account.updateBalance(dto.amount(), dto.transactionType());
-
         Transaction entity = transactionMapper.toEntity(dto);
         if (dto.transactionDate() == null)
             entity.setTransactionDate(Instant.now());
@@ -97,28 +90,24 @@ public class TransactionService {
         return transactionMapper.toResponse(savedTransaction);
     }
 
+    @PreAuthorize("""
+            @securityService.canAccessTransaction(#transactionId) &&
+            (#updateDto.accountId() == null || @securityService.canAccessAccount(#updateDto.accountId()))
+            """)
     @Transactional
-    public TransactionResponseDto updateById(TransactionUpdateDto updateDto, Long transactionId, Long userId) {
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("user with id='%d' not found".formatted(userId)));
+    public TransactionResponseDto updateById(TransactionUpdateDto updateDto, Long transactionId) {
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new TransactionNotFoundException("transaction with id='%d' not found".formatted(transactionId)));
-        if (!transaction.getAccount().getUser().getId().equals(userId))
-            throw new AccessDeniedException("user with id='%d' haven`t transaction with id='%d' on account with id='%d'");
-        processFinancialChanges(transaction, updateDto, user.getId());
+        processFinancialChanges(transaction, updateDto);
         transactionMapper.updateEntity(updateDto, transaction);
         return transactionMapper.toResponse(transaction);
     }
 
-    private void processFinancialChanges(Transaction dbEntity, TransactionUpdateDto updateDto, Long userId) {
+    private void processFinancialChanges(Transaction dbEntity, TransactionUpdateDto updateDto) {
         Account newAccount = updateDto.accountId() == null
                 ? dbEntity.getAccount()
                 : accountRepository.findById(updateDto.accountId())
                 .orElseThrow(() -> new AccountNotFoundException("account with id='%d' not found".formatted(updateDto.accountId())));
-        if (!newAccount.getUser().getId().equals(userId))
-            throw new AccessDeniedException("user with id='%d' haven`t account with id='%d'".formatted(userId, newAccount.getId()));
-
         if (!dbEntity.getAccount().getCurrency().equals(newAccount.getCurrency())) {
             throw new CurrencyNotEqualsException("Expected currency='%s' but found '%s'".formatted(newAccount.getCurrency(), dbEntity.getAccount().getCurrency()));
         }
@@ -131,10 +120,8 @@ public class TransactionService {
                 ? dbEntity.getAmount()
                 : updateDto.amount();
 
-        if (targetType == TransactionType.EXPENSE) {
-            if (newAccount.getBalance().compareTo(targetAmount) < 0) {
-                throw new NotEnoughMoneyException("There are not enough money on account with id='%d'".formatted(newAccount.getId()));
-            }
+        if (targetType == TransactionType.EXPENSE && newAccount.getBalance().compareTo(targetAmount) < 0) {
+            throw new NotEnoughMoneyException("There are not enough money on account with id='%d'".formatted(newAccount.getId()));
         }
         newAccount.updateBalance(targetAmount, targetType);
         dbEntity.setAccount(newAccount);

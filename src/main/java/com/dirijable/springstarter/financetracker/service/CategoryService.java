@@ -14,6 +14,7 @@ import com.dirijable.springstarter.financetracker.repository.CategoryRepository;
 import com.dirijable.springstarter.financetracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,29 +30,29 @@ public class CategoryService {
     private final UserRepository userRepository;
     private final CategoryMapper categoryMapper;
 
-    public List<CategoryResponseDto> findAllByUserId(Long userId){
+    @PreAuthorize("#userId == authentication.principal.id")
+    public List<CategoryResponseDto> findAllByUserId(Long userId) {
         return categoryRepository.findAllByUserId(userId)
                 .stream()
                 .map(categoryMapper::toResponse)
                 .toList();
     }
 
-    public CategoryResponseDto findById(Long categoryId, Long userId){
-        Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(()->new CategoryNotFoundException("category with id='%d' not found".formatted(categoryId)));
-        if(!category.getUser().getId().equals(userId))
-            throw new AccessDeniedException("User with id='%d' not owned category with id='%d'".formatted(userId, categoryId));
-        return categoryMapper.toResponse(category);
+    @PreAuthorize("@securityService.canAccessCategory(#categoryId)")
+    public CategoryResponseDto findById(Long categoryId) {
+        return categoryRepository.findById(categoryId)
+                .map(categoryMapper::toResponse)
+                .orElseThrow(() -> new CategoryNotFoundException(categoryId.toString()));
     }
 
+
+    @PreAuthorize("#userId == authentication.principal.id")
     @Transactional
     public CategoryResponseDto add(CategoryCreateDto createDto, Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> {
-            log.warn("Unable to find user with id='{}'", userId);
-            return new UserNotFoundException("User with id = '%d' not found".formatted(userId));
-        });
+        User user = userRepository.findById(userId).orElseThrow(() ->
+                new UserNotFoundException("User with id = '%d' not found".formatted(userId))
+        );
         if (categoryRepository.existsCategoryByNameAndUserId(createDto.name(), userId)) {
-            log.warn("Unable to add category with name '{}'. This category already exists", createDto.name());
             throw new CategoryAlreadyExistException("Unable to add category with name '%s'. This category already exists".formatted(createDto.name()));
         }
         Category category = categoryMapper.toEntity(createDto);
@@ -60,22 +61,19 @@ public class CategoryService {
         return categoryMapper.toResponse(savedCategory);
     }
 
+    @PreAuthorize("@securityService.canAccessCategory(#categoryId)")
     @Transactional
-    public void deleteCategory(Long categoryId, Long userId) {
-        Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new CategoryNotFoundException("category with id='%d' does not exist".formatted(categoryId)));
-        if(!category.getUser().getId().equals(userId))
-            throw new AccessDeniedException("User with id='%d' not owned category with id='%d'".formatted(userId, categoryId));
+    public void deleteCategory(Long categoryId) {
         categoryRepository.deleteById(categoryId);
     }
 
+
+    @PreAuthorize("@securityService.canAccessCategory(#categoryId)")
     @Transactional
     public CategoryResponseDto updateById(CategoryUpdateDto updateDto, Long categoryId, Long userId) {
-        Category category= categoryRepository.findById(categoryId)
-                .orElseThrow(() ->new CategoryNotFoundException("category with id='%d' does not exist".formatted(categoryId)));
-        if(!category.getUser().getId().equals(userId))
-            throw new AccessDeniedException("User with id='%d' not owned category with id='%d'".formatted(userId, categoryId));
-        if(categoryRepository.existsCategoryByNameAndUserId(updateDto.name(), userId))
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new CategoryNotFoundException(categoryId.toString()));
+        if (categoryRepository.existsCategoryByNameAndUserId(updateDto.name(), userId))
             throw new CategoryAlreadyExistException("Unable to add category with name '%s'. This category already exists".formatted(updateDto.name()));
         categoryMapper.updateEntity(updateDto, category);
         return categoryMapper.toResponse(category);

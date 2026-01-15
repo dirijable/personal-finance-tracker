@@ -1,23 +1,14 @@
 package com.dirijable.springstarter.financetracker.http.rest;
 
-import com.dirijable.springstarter.financetracker.dto.user.UserCreateDto;
 import com.dirijable.springstarter.financetracker.dto.user.UserResponseDto;
 import com.dirijable.springstarter.financetracker.dto.user.UserUpdateDto;
 import com.dirijable.springstarter.financetracker.service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.net.URI;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -36,20 +27,8 @@ public class UserRestController {
         return ResponseEntity.ok(userService.findById(userId));
     }
 
-    @PostMapping
-    public ResponseEntity<UserResponseDto> create(@RequestBody @Validated UserCreateDto createDto) {
-
-        UserResponseDto responseDto = userService.create(createDto);
-        URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(responseDto.id())
-                .toUri();
-        return ResponseEntity.created(uri)
-                .body(responseDto);
-    }
-
     @PatchMapping("/{userId}")
-    public ResponseEntity<UserResponseDto> update(@PathVariable("userId") Long userId,
+    public ResponseEntity<UserResponseDto> updateById(@PathVariable("userId") Long userId,
                                                   @RequestBody @Validated UserUpdateDto updateDto) {
         return ResponseEntity.ok(userService.updateById(userId, updateDto));
     }
