@@ -8,10 +8,14 @@ import com.dirijable.springstarter.financetracker.exception.business.notfound.Tr
 import com.dirijable.springstarter.financetracker.repository.AccountRepository;
 import com.dirijable.springstarter.financetracker.repository.CategoryRepository;
 import com.dirijable.springstarter.financetracker.repository.TransactionRepository;
+import com.dirijable.springstarter.financetracker.security.entity.RefreshToken;
+import com.dirijable.springstarter.financetracker.security.repository.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 
 @Service
@@ -21,6 +25,14 @@ public class SecurityService {
     private final CategoryRepository categoryRepository;
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+
+    public boolean canLogout(String refreshToken) {
+        return refreshTokenRepository.findByToken(refreshToken)
+                .filter(token -> token.getUser().getId().equals(getUserId()))
+                .isPresent();
+//                .orElseThrow(() -> new AccessDeniedException("You don't have permission to logout"));
+    }
 
     public boolean canAccessTransaction(Long transactionId) {
         if (!transactionRepository.existsById(transactionId)) {
@@ -51,7 +63,6 @@ public class SecurityService {
         }
         return true;
     }
-
 
 
     public Long getUserId() {

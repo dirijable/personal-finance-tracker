@@ -20,4 +20,4 @@ server:
   port: 8080
 jwt:
   secret: 452f6f4d306b66314f346b7a69514e4b506b325254336c584a5647504369426d
-  expiration: 86400000
+  expiration: 900000

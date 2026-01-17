@@ -10,10 +10,11 @@ import java.util.Optional;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
     @Query(
-            value = "SELECT t FROM Transaction t " +
-                    "WHERE t.id = :id AND t.account.user.id = :userId"
+            "SELECT EXISTS (" +
+                    "SELECT t FROM Transaction t " +
+                    "WHERE t.id = :id AND t.account.user.id = :userId  )"
     )
-    Optional<Transaction> findByIdAndUserId(Long id, Long userId);
+    boolean existsTransactionByIdAndUserId(Long id, Long userId);
 
     List<Transaction> findAllByAccountUserId(Long userId);
 }

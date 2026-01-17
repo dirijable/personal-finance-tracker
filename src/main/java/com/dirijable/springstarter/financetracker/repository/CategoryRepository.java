@@ -8,6 +8,6 @@ import java.util.List;
 public interface CategoryRepository extends JpaRepository<Category, Long > {
 
     boolean existsCategoryByNameAndUserId(String name, Long userId);
-
+    boolean existsCategoryByIdAndUserId(Long id, Long userId);
     List<Category> findAllByUserId(Long userId);
 }

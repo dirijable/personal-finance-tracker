@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -21,16 +23,15 @@ import java.util.Map;
 public class GlobalControllerExceptionHandler extends ResponseEntityExceptionHandler {
 
     @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(
-            MethodArgumentNotValidException ex,
-            HttpHeaders headers,
-            HttpStatusCode status,
-            WebRequest request) {
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
 
         Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().stream().forEach(error -> {
-            errors.put(error.getField(), error.getDefaultMessage());
-        });
+        ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .forEach(error ->
+                        errors.put(error.getField(), error.getDefaultMessage())
+                );
         ErrorResponse errorResponse = new ErrorResponse(
                 status.value(),
                 "Validation failed",
@@ -40,18 +41,10 @@ public class GlobalControllerExceptionHandler extends ResponseEntityExceptionHan
         return ResponseEntity.badRequest().body(errorResponse);
     }
 
-
-    @ExceptionHandler(FinanceTrackerException.class)
+    @ExceptionHandler({FinanceTrackerException.class, AccessDeniedException.class, UsernameNotFoundException.class})
     public ResponseEntity<ErrorResponse> handleFinanceTrackerException(FinanceTrackerException ex) {
-        ErrorResponse error = new ErrorResponse(
-                ex.getStatus().value(),
-                ex.getMessage(),
-                Instant.now(),
-                null
-        );
-        return ResponseEntity
-                .status(ex.getStatus())
-                .body(error);
+        ErrorResponse error = new ErrorResponse(ex.getStatus().value(), ex.getMessage(), Instant.now(), null);
+        return ResponseEntity.status(ex.getStatus()).body(error);
     }
 
 }
