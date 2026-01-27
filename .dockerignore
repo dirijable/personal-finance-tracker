@@ -1,0 +1,8 @@
+.gradle
+.idea
+.gitattributes
+.gitignore
+.env
+gradlew.bat
+HELP.md
+build/
