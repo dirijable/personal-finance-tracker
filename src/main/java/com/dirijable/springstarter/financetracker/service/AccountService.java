@@ -2,11 +2,11 @@ package com.dirijable.springstarter.financetracker.service;
 
 import com.dirijable.springstarter.financetracker.database.entity.Account;
 import com.dirijable.springstarter.financetracker.database.entity.User;
+import com.dirijable.springstarter.financetracker.database.pagination.PageResponse;
 import com.dirijable.springstarter.financetracker.dto.account.AccountCreateDto;
 import com.dirijable.springstarter.financetracker.dto.account.AccountResponseDto;
 import com.dirijable.springstarter.financetracker.dto.account.AccountUpdateDto;
 import com.dirijable.springstarter.financetracker.exception.business.conflict.AccountAlreadyExistsException;
-import com.dirijable.springstarter.financetracker.exception.business.denied.AccessDeniedException;
 import com.dirijable.springstarter.financetracker.exception.business.notfound.AccountNotFoundException;
 import com.dirijable.springstarter.financetracker.exception.business.notfound.UserNotFoundException;
 import com.dirijable.springstarter.financetracker.mapper.AccountMapper;
@@ -15,6 +15,7 @@ import com.dirijable.springstarter.financetracker.repository.UserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,21 +36,18 @@ public class AccountService {
     AccountMapper accountMapper;
 
     @PreAuthorize("#userId == authentication.principal.id")
-    public List<AccountResponseDto> findAllByUserId(Long userId) {
-
-        if(!userRepository.existsById(userId))
-            throw new UserNotFoundException("user with id='%d' not found".formatted(userId));
-        return accountRepository.findAllByUserId(userId)
-                .stream()
+    public PageResponse<AccountResponseDto> findAllByUserId(Long userId, Pageable pageable) {
+        return PageResponse.of(
+                accountRepository.findAllByUserId(userId, pageable)
                 .map(accountMapper::toResponse)
-                .toList();
+        );
     }
 
     @PreAuthorize("#userId == authentication.principal.id")
-    public AccountResponseDto findById(Long accountId, Long userId){
+    public AccountResponseDto findById(Long accountId, Long userId) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new UserNotFoundException("account with id='%d' not found".formatted(accountId)));
-        if(!account.getUser().getId().equals(userId)){
+        if (!account.getUser().getId().equals(userId)) {
             throw new AccountNotFoundException("User with id='%d' have not account with id='%d'".formatted(userId, accountId));
         }
         return accountMapper.toResponse(account);
@@ -57,11 +55,11 @@ public class AccountService {
 
     @PreAuthorize("#userId == authentication.principal.id")
     @Transactional
-    public AccountResponseDto create(AccountCreateDto createDto, Long userId){
+    public AccountResponseDto create(AccountCreateDto createDto, Long userId) {
         Account account = accountMapper.toEntity(createDto);
         User user = userRepository.findById(userId)
-                        .orElseThrow(() -> new UserNotFoundException("user with id='%d' not found".formatted(userId)));
-        if(accountRepository.existsByNameAndUserId(createDto.name(), user.getId()))
+                .orElseThrow(() -> new UserNotFoundException("user with id='%d' not found".formatted(userId)));
+        if (accountRepository.existsByNameAndUserId(createDto.name(), user.getId()))
             throw new AccountAlreadyExistsException("user with id='%d' already has account with name='%s'".formatted(user.getId(), createDto.name()));
         user.addAccount(account);
         accountRepository.save(account);
@@ -70,7 +68,7 @@ public class AccountService {
 
     @PreAuthorize("@securityService.canAccessAccount(#accountId)")
     @Transactional
-    public AccountResponseDto updateById(AccountUpdateDto updateDto, Long accountId){
+    public AccountResponseDto updateById(AccountUpdateDto updateDto, Long accountId) {
 
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException(accountId.toString()));
@@ -80,8 +78,8 @@ public class AccountService {
 
     @PreAuthorize("@securityService.canAccessAccount(#accountId)")
     @Transactional
-    public void deleteById(Long accountId){
-       accountRepository.deleteById(accountId);
+    public void deleteById(Long accountId) {
+        accountRepository.deleteById(accountId);
     }
 
 

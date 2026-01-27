@@ -1,11 +1,13 @@
 package com.dirijable.springstarter.financetracker.http.rest;
 
 import com.dirijable.springstarter.financetracker.database.entity.User;
+import com.dirijable.springstarter.financetracker.database.pagination.PageResponse;
 import com.dirijable.springstarter.financetracker.dto.account.AccountCreateDto;
 import com.dirijable.springstarter.financetracker.dto.account.AccountResponseDto;
 import com.dirijable.springstarter.financetracker.dto.account.AccountUpdateDto;
 import com.dirijable.springstarter.financetracker.service.AccountService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
@@ -23,8 +25,9 @@ public class AccountRestController {
     private final AccountService accountService;
 
     @GetMapping
-    public ResponseEntity<List<AccountResponseDto>> findAllByUserId(@AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(accountService.findAllByUserId(user.getId()));
+    public ResponseEntity<PageResponse<AccountResponseDto>> findAllByUserId(@AuthenticationPrincipal User user,
+                                                                            Pageable pageable) {
+        return ResponseEntity.ok(accountService.findAllByUserId(user.getId(), pageable));
     }
 
     @GetMapping("/{accountId}")
